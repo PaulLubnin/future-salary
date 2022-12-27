@@ -5,7 +5,7 @@ from pprint import pprint
 def get_vacancies(hh_url: str, language: str = 'Python', ):
 
     payload = {
-        'text': f'программист',
+        'text': f'программист {language}',
         'area': 1,
         'date_from': '2022-11-25',
         'date_to': '2022-12-25'
@@ -19,5 +19,5 @@ if __name__ == '__main__':
     hh_url = 'https://api.hh.ru/vacancies'
     languages = ('JavaScript', 'Java', 'Python', 'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift')
 
-    vacancies = get_vacancies(hh_url)
+    vacancies = {language: get_vacancies(hh_url, language).get("found") for language in languages}
     pprint(vacancies)
