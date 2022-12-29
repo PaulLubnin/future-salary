@@ -1,38 +1,40 @@
-import datetime
+import os
 from itertools import count
 from pprint import pprint
 
 import requests
+from dotenv import load_dotenv
 
 
-def get_vacancies(url: str, date_from: datetime, lang: str, area: int = 1):
+def get_vacancies(url: str, token: str, lang: str, industry: int = 48, town: str = 'Москва'):
     for page in count():
+        header = {
+            'X-Api-App-Id': token
+        }
         payload = {
-            'text': f'программист {lang}',
-            'area': area,
-            'date_from': date_from.strftime('%Y-%m-%d'),
+            'catalogues': industry,
+            'town': town,
+            'keyword': lang,
             'page': page
         }
-        response = requests.get(url, params=payload)
+        response = requests.get(url, headers=header, params=payload)
         response.raise_for_status()
         page_payload = response.json()
-        yield from page_payload['items']
-        if page >= 99:
+        yield from page_payload['objects']
+        if not page_payload['more']:
             break
 
 
 def predict_rub_salary(job: dict):
-    pay = job['salary']
-    if not pay:
-        return
-    if pay['currency'] != 'RUR':
-        return
-    if pay['from'] and pay['to']:
-        return (pay['from'] + pay['to']) / 2
-    if not pay['to']:
-        return pay['from'] * 1.2
-    if not pay['from']:
-        return pay['to'] * 0.8
+    pay_from, pay_to = job['payment_from'], job['payment_to']
+    if not pay_from and not pay_to:
+        return None
+    if pay_from and pay_to:
+        return (pay_from + pay_to) / 2
+    if not pay_to:
+        return pay_from * 1.2
+    if not pay_from:
+        return pay_to * 0.8
 
 
 def average_salary(all_salaries: list):
@@ -48,15 +50,15 @@ def average_salary(all_salaries: list):
 
 
 if __name__ == '__main__':
-    today = datetime.datetime.today()
-    per_month = today - datetime.timedelta(days=30)
-    hh_url = 'https://api.hh.ru/vacancies'
+    load_dotenv()
+    sj_token = os.getenv('SUPER_JOB_SECRET_KEY')
+    sj_url = 'https://api.superjob.ru/2.0/vacancies/'
     languages = ('JavaScript', 'Java', 'Python', 'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift')
 
     statics = dict()
     for language in languages:
         vacancies = list()
-        vacancies.extend(get_vacancies(hh_url, per_month, language))
+        vacancies.extend(get_vacancies(sj_url, sj_token, language))
         salaries = [predict_rub_salary(vacancy) for vacancy in vacancies]
         salary_per_job = average_salary(salaries)
         statics[language] = {'vacancies_found': len(vacancies),
