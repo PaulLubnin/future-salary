@@ -1,11 +1,12 @@
 import datetime
 from itertools import count
-from pprint import pprint
 
 import requests
 
+from boot_scripts import average_salary, LANGUAGES, create_table
 
-def get_vacancies(url: str, date_from: datetime, lang: str, area: int = 1):
+
+def get_vacancies(url: str, date_from: datetime, lang: str = '', area: int = 1):
     for page in count():
         payload = {
             'text': f'программист {lang}',
@@ -35,31 +36,19 @@ def predict_rub_salary(job: dict):
         return pay['to'] * 0.8
 
 
-def average_salary(all_salaries: list):
-    summ = 0
-    processed_vacancies = 0
-    for salary in all_salaries:
-        if not salary:
-            continue
-        summ += salary
-        processed_vacancies += 1
-    return {'salary': int(summ / processed_vacancies) if processed_vacancies else None,
-            'processed': processed_vacancies}
-
-
 if __name__ == '__main__':
     today = datetime.datetime.today()
     per_month = today - datetime.timedelta(days=30)
+    stats_from = ' HeadHunter Moscow '
     hh_url = 'https://api.hh.ru/vacancies'
-    languages = ('JavaScript', 'Java', 'Python', 'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift')
 
     statics = dict()
-    for language in languages:
+    for language in LANGUAGES:
         vacancies = list()
-        vacancies.extend(get_vacancies(hh_url, per_month, language))
+        vacancies.extend(get_vacancies(hh_url, per_month, lang=language))
         salaries = [predict_rub_salary(vacancy) for vacancy in vacancies]
         salary_per_job = average_salary(salaries)
         statics[language] = {'vacancies_found': len(vacancies),
                              'vacancies_processed': salary_per_job['processed'],
                              'average_salary': salary_per_job['salary']}
-    pprint(statics)
+    print(create_table(statics, stats_from))

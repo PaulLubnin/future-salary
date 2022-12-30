@@ -1,12 +1,13 @@
 import os
 from itertools import count
-from pprint import pprint
 
 import requests
 from dotenv import load_dotenv
 
+from boot_scripts import LANGUAGES, create_table, average_salary
 
-def get_vacancies(url: str, token: str, lang: str, industry: int = 48, town: str = 'Москва'):
+
+def get_vacancies(url: str, token: str, lang: str = '', industry: int = 48, town: str = 'Москва'):
     for page in count():
         header = {
             'X-Api-App-Id': token
@@ -37,31 +38,19 @@ def predict_rub_salary(job: dict):
         return pay_to * 0.8
 
 
-def average_salary(all_salaries: list):
-    summ = 0
-    processed_vacancies = 0
-    for salary in all_salaries:
-        if not salary:
-            continue
-        summ += salary
-        processed_vacancies += 1
-    return {'salary': int(summ / processed_vacancies) if processed_vacancies else None,
-            'processed': processed_vacancies}
-
-
 if __name__ == '__main__':
     load_dotenv()
+    stats_from = ' SuperJob Moscow '
     sj_token = os.getenv('SUPER_JOB_SECRET_KEY')
     sj_url = 'https://api.superjob.ru/2.0/vacancies/'
-    languages = ('JavaScript', 'Java', 'Python', 'Ruby', 'PHP', 'C++', 'C#', 'C', 'Go', 'Swift')
 
     statics = dict()
-    for language in languages:
+    for language in LANGUAGES:
         vacancies = list()
-        vacancies.extend(get_vacancies(sj_url, sj_token, language))
+        vacancies.extend(get_vacancies(sj_url, sj_token, lang=language))
         salaries = [predict_rub_salary(vacancy) for vacancy in vacancies]
         salary_per_job = average_salary(salaries)
         statics[language] = {'vacancies_found': len(vacancies),
                              'vacancies_processed': salary_per_job['processed'],
                              'average_salary': salary_per_job['salary']}
-    pprint(statics)
+    print(create_table(statics, stats_from))
