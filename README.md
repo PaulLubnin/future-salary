@@ -12,6 +12,8 @@ pip install -r requirements.txt
 
 ### Как пользоваться
 
+Для начала зарегистрируйтесь на сайте [SuperJob](https://www.superjob.ru/) и получите токен.
+Затем создайте файл `.env` и добавьте в него переменную `SUPER_JOB_SECRET_KEY=token`
 Из папки с проектом в командной строке наберите `python sj_vacansies.py` или `python hh_vacancies.py`
 
 #### Пример использования:
