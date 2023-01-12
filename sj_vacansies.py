@@ -4,7 +4,7 @@ from itertools import count
 import requests
 from dotenv import load_dotenv
 
-from boot_scripts import LANGUAGES, create_table, average_salary
+from boot_scripts import LANGUAGES, create_table, calculation_salary, create_statistics
 
 
 def get_vacancies(url: str, token: str, lang: str = '', industry: int = 48, town: str = 'Москва'):
@@ -30,12 +30,7 @@ def predict_rub_salary(job: dict):
     pay_from, pay_to = job['payment_from'], job['payment_to']
     if not pay_from and not pay_to:
         return None
-    if pay_from and pay_to:
-        return (pay_from + pay_to) / 2
-    if not pay_to:
-        return pay_from * 1.2
-    if not pay_from:
-        return pay_to * 0.8
+    return calculation_salary(pay_from, pay_to)
 
 
 if __name__ == '__main__':
@@ -48,9 +43,5 @@ if __name__ == '__main__':
     for language in LANGUAGES:
         vacancies = list()
         vacancies.extend(get_vacancies(sj_url, sj_token, lang=language))
-        salaries = [predict_rub_salary(vacancy) for vacancy in vacancies]
-        salary_per_job = average_salary(salaries)
-        statics[language] = {'vacancies_found': len(vacancies),
-                             'vacancies_processed': salary_per_job['processed'],
-                             'average_salary': salary_per_job['salary']}
+        statics.update(create_statistics(language, vacancies, predict_rub_salary))
     print(create_table(statics, stats_from))

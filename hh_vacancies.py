@@ -3,7 +3,7 @@ from itertools import count
 
 import requests
 
-from boot_scripts import average_salary, LANGUAGES, create_table
+from boot_scripts import LANGUAGES, create_table, calculation_salary, create_statistics
 
 
 def get_vacancies(url: str, date_from: datetime, lang: str = '', area: int = 1):
@@ -28,12 +28,7 @@ def predict_rub_salary(job: dict):
         return
     if pay['currency'] != 'RUR':
         return
-    if pay['from'] and pay['to']:
-        return (pay['from'] + pay['to']) / 2
-    if not pay['to']:
-        return pay['from'] * 1.2
-    if not pay['from']:
-        return pay['to'] * 0.8
+    return calculation_salary(pay['from'], pay['to'])
 
 
 if __name__ == '__main__':
@@ -46,9 +41,5 @@ if __name__ == '__main__':
     for language in LANGUAGES:
         vacancies = list()
         vacancies.extend(get_vacancies(hh_url, per_month, lang=language))
-        salaries = [predict_rub_salary(vacancy) for vacancy in vacancies]
-        salary_per_job = average_salary(salaries)
-        statics[language] = {'vacancies_found': len(vacancies),
-                             'vacancies_processed': salary_per_job['processed'],
-                             'average_salary': salary_per_job['salary']}
+        statics.update(create_statistics(language, vacancies, predict_rub_salary))
     print(create_table(statics, stats_from))
