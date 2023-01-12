@@ -19,12 +19,12 @@ def average_salary(all_salaries: list):
 
 def create_table(job_stats: dict, stats_from: str):
     title = stats_from
-    table_date = [
+    statistics_table = [
         ['Язык программирования', 'Вакансий найдено', 'Вакансий обработано', 'Средняя зарплата'],
     ]
     for language, stats in job_stats.items():
-        table_date.append([language, stats['vacancies_found'], stats['vacancies_processed'], stats['average_salary']]),
-    table_instance = SingleTable(table_date, title)
+        statistics_table.append([language, stats['vacancies_found'], stats['vacancies_processed'], stats['average_salary']]),
+    table_instance = SingleTable(statistics_table, title)
     for column in range(4):
         table_instance.justify_columns[column] = 'right'
     return table_instance.table
